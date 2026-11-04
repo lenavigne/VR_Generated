@@ -9,7 +9,7 @@ public class GeneratingTree : MonoBehaviour
     [SerializeField] private GameObject p_branch; 
     void Start()
     {
-        Generate("F+F-FF", Mathf.PI / 2);
+        Generate("F+FFF", Mathf.PI / 4);
         
         //GameObject b = Instantiate(p_branch);
         //b.GetComponent<Branch>().CreateBranch(0, 0, 0, 0, 2, 0);
@@ -28,7 +28,7 @@ public class GeneratingTree : MonoBehaviour
             {
                 case 'F':
                     float x2 = 0;
-                    float y2 = currentY - Mathf.Sin(angle);
+                    float y2 = currentY + Mathf.Sin(angle);
                     float z2 = currentZ + Mathf.Cos(angle);
                     GameObject b = Instantiate(p_branch);
                     b.GetComponent<Branch>().CreateBranch(currentX, currentY, currentZ, x2, y2, z2);
