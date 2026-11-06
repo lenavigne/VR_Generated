@@ -9,15 +9,34 @@ public class Branch : MonoBehaviour
 {
     [SerializeField] Material _material;
     private Mesh _mesh;
-    public float height = 2f;
-    public float radius = 0.2f;
+    private float speed = 0.05f;
+    public bool _isTip = false;
+    public bool _isRetracting = false;
     void Start()
     {
         //CreateBranch(0, 0, 0, 0, 2, 0);
     }
-    public void CreateBranch(float radiusB, float radiusT)
+    void Update()
+    {
+        _isTip = (transform.childCount == 0); // si le filament n'a pas d'enfant c'est un bout
+
+        if(_isTip && _isRetracting) //si la branche est un filament de fin et qu'il doit se retracter
+        {
+            if(!IsRetracted()) //s'il n'est pas complètement rétracté
+                Retract();
+            else//sinon
+            {
+                transform.parent.GetComponent<Branch>()._isRetracting = true;//son parent doit se rétracter
+            
+                Destroy(transform.gameObject);//la branche rétractée doit etre détruite
+            }
+        }
+        
+    }
+    public void CreateBranch(float radiusB, float radiusT, float height)
     {
         _mesh = new Mesh();
+        speed = height / 5;
         Vector3[] v = new Vector3[8];
         v[0] = new Vector3( radiusB,   0,      0        );
         v[1] = new Vector3( 0,         0,      radiusB  );
@@ -66,4 +85,28 @@ public class Branch : MonoBehaviour
         GetComponent<MeshFilter>().mesh = _mesh;
         GetComponent<MeshRenderer>().material = _material;
     }
+
+    private void Retract()
+    {
+        Vector3[] myVertices = _mesh.vertices;
+        //myVertices[0] = Vector3.MoveTowards(myVertices[0], Vector3.zero, speed * Time.deltaTime);
+        //myVertices[1] = Vector3.MoveTowards(myVertices[1], Vector3.zero, speed * Time.deltaTime);
+        //myVertices[2] = Vector3.MoveTowards(myVertices[2], Vector3.zero, speed * Time.deltaTime);
+        //myVertices[3] = Vector3.MoveTowards(myVertices[3], Vector3.zero, speed * Time.deltaTime);
+        myVertices[4] = Vector3.MoveTowards(myVertices[4], Vector3.zero, speed * Time.deltaTime);
+        myVertices[5] = Vector3.MoveTowards(myVertices[5], Vector3.zero, speed * Time.deltaTime);
+        myVertices[6] = Vector3.MoveTowards(myVertices[6], Vector3.zero, speed * Time.deltaTime);
+        myVertices[7] = Vector3.MoveTowards(myVertices[7], Vector3.zero, speed * Time.deltaTime);
+
+        _mesh.vertices = myVertices;
+        _mesh.RecalculateNormals();
+        _mesh.RecalculateBounds();
+        GetComponent<MeshFilter>().mesh = _mesh;
+    }
+
+    public bool IsRetracted()
+    {
+        return _mesh.vertices[7].y == 0;
+    }
+
 }

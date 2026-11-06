@@ -1,34 +1,41 @@
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
-
+using UnityEngine.UIElements;
+[RequireComponent(typeof(GrammarGenerator))]
+//[RequireComponent(typeof(BoxCollider))]
 public class GeneratingTree : MonoBehaviour
 {
 
-    //[SerializeField] private Material _material;
+    private GrammarGenerator _grammar;
     [SerializeField] private GameObject p_branch;
-    [SerializeField] private float radiusBase = 0.3f;
-    //private float minA_X = 10;
-    //private float maxA_X = 30;
-    //private float minA_Z = 45;
-    //private float maxA_Z = 70;
+    [SerializeField] private float widthBaseFilament = 0.03f;
+    [SerializeField] private float widthReduction = 0.75f;
+    [SerializeField] private float minlengthFilament = 0.2f;
+    [SerializeField] private float maxlengthFilament = 0.5f;
+    private float minA_X = 15f;
+    private float maxA_X = 35f;
+    private float minA_Z = 25f;
+    private float maxA_Z = 45f;
+    private List<Transform> _tips = new List<Transform>();
+    public bool ToRetract = false;
     void Start()
     {
-        Generate("F[***F/F/F][+++F-F-F][///F*F*F][---F+F+F]F[**F/F][++F-F][//F*F][--F+F]F[*F][+F][/F][-F]FF", 20, 45);
-        //Generate("F", 20, 45);
-        
-        //GameObject b = Instantiate(p_branch);
-        //b.GetComponent<Branch>().CreateBranch(0, 0, 0, 0, 2, 0);
+        _grammar = GetComponent<GrammarGenerator>();
+        GenerateTree(_grammar.GenerateCommand());
+        //GenerateTree("F[***F/F/F][+++F-F-F][///F*F*F][---F+F+F]F[**F/F][++F-F][//F*F][--F+F]F[*F][+F][/F][-F]FF", 20, 45);
+        //GenerateTree("F", 20, 45);
     }
 
-    public void Generate(string gram, float angleX, float angleZ)
+    public void GenerateTree(string gram)
     {
         Vector3 baseBranch = new Vector3(0, 0, 0);
         Vector3 rot = new Vector3(0, 0, 0);
         Transform bParent = transform;
-        Stack<Transform> sRoot = new();
-        float radRed = radiusBase * 0.2f;
-        Stack<float> rRoot = new();
+        Stack<Transform> filamentRoot = new();
+        Stack<float> widthRoot = new();
+        //Vector3 minBoundsTree = Vector3.zero;
+        //Vector3 maxBoundsTree = Vector3.zero;
 
 
         foreach (var c in gram)
@@ -36,49 +43,63 @@ public class GeneratingTree : MonoBehaviour
             switch (c)
             {
                 case 'F':
+                    float lengthFilament = Random.Range(minlengthFilament, maxlengthFilament);
                     Quaternion angle = Quaternion.Euler(rot);
                     GameObject b = Instantiate(p_branch, bParent.position, angle);
-                    b.GetComponent<Branch>().CreateBranch(radiusBase, radiusBase - radRed);
+                    b.GetComponent<Branch>().CreateBranch(widthBaseFilament, widthBaseFilament * widthReduction, lengthFilament);
                     b.transform.SetParent(bParent);
                     b.transform.localPosition = baseBranch;
-                    float h = b.GetComponent<Branch>().height;
-                    Vector3 nextPos = new Vector3(0, h, 0);
-                    //Debug.Log("position = " + b.transform.localPosition);//
-                    //Debug.Log("nextpos = " + nextPos);//
-                    //float x2 = - (b.GetComponent<Branch>().height * Mathf.Sin(angle.z));
-                    //float cosY = (angle.x > angle.z) ? Mathf.Cos(angle.x) : Mathf.Cos(angle.z);
-                    //float y2 = (b.GetComponent<Branch>().height * cosY);
-                    //float z2 = b.GetComponent<Branch>().height * Mathf.Sin(angle.x);
-                    //Vector3 nextBase = new Vector3(x2, y2, z2);
-                    //currentBase += nextBase;
+                    Vector3 nextPos = new Vector3(0, lengthFilament, 0);
+                    ////Calcul des limites pour le box collider //MARCHE PAS
+                    //minBoundsTree = Vector3.Min(minBoundsTree, b.transform.position);
+                    //minBoundsTree = Vector3.Min(minBoundsTree, b.transform.position + (angle * Vector3.up * lengthFilament));
+                    //maxBoundsTree = Vector3.Max(maxBoundsTree, b.transform.position);
+                    //maxBoundsTree = Vector3.Max(maxBoundsTree, b.transform.position + (angle * Vector3.up * lengthFilament));
                     baseBranch = nextPos;
                     bParent = b.transform;
-                    radiusBase -= radRed;
+                    widthBaseFilament *= widthReduction;
                     break;
                 case '+':
-                    rot.x += angleX;
+                    rot.x += Random.Range(minA_X, maxA_X);
                     break;
                 case '-':
-                    rot.x -= angleX;
+                    rot.x -= Random.Range(minA_X, maxA_X);
                     break;
                 case '*':
-                    rot.z += angleZ;
+                    rot.z += Random.Range(minA_Z, maxA_Z);
                     break;
                 case '/':
-                    rot.z -= angleZ;
+                    rot.z -= Random.Range(minA_Z, maxA_Z);
                     break;
                 case '[':
-                    sRoot.Push(bParent); //beginning of the branch, ad the root in the stack
-                    rRoot.Push(radiusBase); 
+                    filamentRoot.Push(bParent); //beginning of the branch, ad the root in the stack
+                    widthRoot.Push(widthBaseFilament); 
                     break;
                 case ']':
-                    bParent = sRoot.Pop(); //end of the branch, return to the root 
-                    radiusBase = rRoot.Pop(); 
+                    bParent.GetComponent<Branch>()._isTip = true;
+                    _tips.Add(bParent);
+                    bParent = filamentRoot.Pop(); //end of the branch, return to the root 
+                    widthBaseFilament = widthRoot.Pop(); 
                     break;
                 default:
                     break;
             }
         }
-        
+
+        //BoxCollider bcollider = GetComponent<BoxCollider>();
+        //bcollider.center = (minBoundsTree + maxBoundsTree) / 2f;
+        //bcollider.size = (maxBoundsTree - minBoundsTree) /2f;
+    }
+
+    public void RetractTree()
+    {
+        if (!ToRetract)
+        {
+            ToRetract = true;
+            foreach (Transform t in _tips)
+            {
+                t.GetComponent<Branch>()._isRetracting = true;
+            }
+        }
     }
 }

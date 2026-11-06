@@ -104,3 +104,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Branch
   _material: {fileID: 2100000, guid: c0d8c46fce9c96249b2ee4215ac6f0d3, type: 2}
+  height: 2
+  radius: 0.2
