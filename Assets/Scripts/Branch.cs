@@ -36,7 +36,7 @@ public class Branch : MonoBehaviour
     public void CreateBranch(float radiusB, float radiusT, float height)
     {
         _mesh = new Mesh();
-        speed = height / 5;
+        speed = height / 2;
         Vector3[] v = new Vector3[8];
         v[0] = new Vector3( radiusB,   0,      0        );
         v[1] = new Vector3( 0,         0,      radiusB  );

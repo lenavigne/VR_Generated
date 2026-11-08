@@ -16,11 +16,14 @@ public class RoomTrigger : MonoBehaviour
             {
                 o.SetActive(false);
             }
-            foreach (GameObject o in objectsToDestroy)
+            if (objectsToDestroy.Length > 0)
             {
-                Destroy(o);
+                foreach (GameObject o in objectsToDestroy)
+                {
+                    Destroy(o);
+                }
+                objectsToDestroy = null;
             }
-            objectsToDestroy = null;
             foreach (GameObject o in objectsToEnable)
             {
                 o.SetActive(true);
